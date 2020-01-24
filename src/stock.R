@@ -127,7 +127,7 @@ insertAccount <- function(account, company, purpose, loginID, loginPassword) {
                         ))
 }
 
-getTotalProfit <- function(profitType="month", tradeStrategy, startDate, endDate) {
+getTotalProfit <- function(profitType="month", tradeStrategyToGet, startDate, endDate) {
   
   profitTypeList <- c("month", "week", "day", "total")
   
@@ -137,7 +137,7 @@ getTotalProfit <- function(profitType="month", tradeStrategy, startDate, endDate
   
   profitData <- tradeData[date >= as.Date(startDate) 
                           & date <= as.Date(endDate)
-                          & tradeStrategy == tradeStrategy]
+                          & tradeStrategy == tradeStrategyToGet]
   
  if (profitType == "total") {
     profitData[, by := paste0(startDate, " ~ ", endDate)]
@@ -162,13 +162,12 @@ getTotalProfit <- function(profitType="month", tradeStrategy, startDate, endDate
   
   profitData <- buyData[sellData, on=c("name", "by"), nomatch=0]
   profitData[, `:=` (profit = totalQuantity * (averageSellPrice - averageBuyPrice),
-                     profitRatio = paste0(round(((averageSellPrice - averageBuyPrice) / averageBuyPrice), 2), "%"))]
+                     profitRatio = paste0(round(((averageSellPrice - averageBuyPrice) / averageBuyPrice * 100), 2), "%"))]
   
   print(profitData)
   # 지금은 종목별인데 전체에 대한 합계도 구해야 함.
 }
 
-# 구현
 updateBalancedData <- function(name, tradeStrategy, quantity, price) {
   if (name %in% balancedData[, name]) {
     balancedData <<- balancedData[name == name, `:=` (totalPrice = totalPrice + quantity * price,
@@ -188,14 +187,43 @@ updateBalancedData <- function(name, tradeStrategy, quantity, price) {
 }
 
 initializeBalancedDataByTradeData <- function() {
-  tradeData[, .(), by=c("name", "tradeStrategy")]
+  initBalancedData <- data.table(name=character()
+                             , tradeStrategy=character()
+                             , totalPrice=numeric()  
+                             , totalQuantity=numeric() 
+                             , averagePrice=numeric()  
+                             , market=character())
+  lapply(1:nrow(tradeData), function(row) {
+    name_temp <- tradeData[row, name]
+    tradeStrategy_temp <- tradeData[row, tradeStrategy]
+    price_temp <- tradeData[row, price]
+    quantity_temp <- tradeData[row, (quantity = ifelse(tradeType=="매수", quantity, -quantity))]
+    tradeType_temp <- tradeData[row, tradeType]
+    market_temp <- tradeData[row, market]
+    
+    # balancedData에 있는 종목이면
+    if (paste(name_temp, tradeStrategy_temp) %in% initBalancedData[, paste(name, tradeStrategy)]) {
+      initBalancedData[name==name_temp & tradeStrategy==tradeStrategy_temp, `:=`
+                       (totalQuantity = totalQuantity + quantity_temp,
+                         totalPrice = totalPrice + ifelse(tradeType=="매수", price_temp * quantity_temp
+                                                          , averagePrice * quantity_temp))]
+      initBalancedData[name==name_temp & tradeStrategy==tradeStrategy_temp, `:=`
+                       (averagePrice = totalPrice / totalQuantity)]
+    } else { # balancedData에 없는 종목이면
+      initBalancedData <<- rbind(initBalancedData,
+                                list(
+                                  name=name_temp
+                                  , tradeStrategy=tradeStrategy_temp
+                                  , totalPrice=price * quantity_temp
+                                  , totalQuantity=quantity_temp
+                                  , averagePrice=price_temp
+                                  , market=market_temp
+                                ))
+    }
+  })
+  return (initBalancedData[totalQuantity != 0])
 }
-# 로직 다시 짜야 함함
-balancedData <<- tradeData[, .(averagePrice=sum(totalPrice) / sum(quantity),
-                               balancedQuantity=sum(quantity * ifelse(tradeType == "매수", 1, -1)))
-                           , by=c("name", "tradeStrategy")]
-balancedData[, averagePrice := balancedPrice / balancedQuantity]
-balancedData[, averagePrice := ifelse(is.infinite(averagePrice), 0, averagePrice)]
+
 
 getAnnualizedReturn <- function() {
   # 연수익률로 환산 : 수익률 * 보유기간 / 365
@@ -246,8 +274,8 @@ pushGitHub <- function(files=NULL, msg) {
     shell(paste0('git commit -m "', msg, '"'))
     shell("git push origin master")
   }
-  shell(paste0("git add ", paste(files, collapse=" ")))
-  shell(paste0("git commit -m '", msg, "'"))
+  shell(paste0('git add ', paste(files, collapse=" ")))
+  shell(paste0('git commit -m "', msg, '"'))
   shell("git push origin master")
 }
 # _________________________________
