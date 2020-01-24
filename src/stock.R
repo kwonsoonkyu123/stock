@@ -242,7 +242,7 @@ pushGitHub <- function(files=NULL, msg) {
   # $ git config --global user.email johndoe@example.com
   if (is.na(files)) {
     shell("git add --all")
-    shell(paste0("git commit -m '", msg, "'"))
+    shell(paste0('git commit -m "', msg, '"'))
     shell("git push origin master")
   }
   shell(paste0("git add ", paste(files, collapse=" ")))
