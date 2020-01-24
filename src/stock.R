@@ -238,8 +238,9 @@ sendMail <- function(from, to, title, body, files) {
 
 pushGitHub <- function(files=NULL, msg) {
   # git configure ¼³Á¤
-  # $ git config --global user.name "John Doe"
-  # $ git config --global user.email johndoe@example.com
+  shell('git config --global user.name "John Doe"')
+  shell('git config --global user.email "nerochaos2@korea.ac.kr')
+  
   if (is.na(files)) {
     shell("git add --all")
     shell(paste0('git commit -m "', msg, '"'))
