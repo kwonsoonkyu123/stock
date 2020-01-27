@@ -76,7 +76,7 @@ stockData[, detail := ""]
 insertStockData(name="한국조선해양", goalPrice=133000, sellPrice=130000, buyPrice=120000, lossPrice=115000,
                 tradeStrategy="예쁜차트", date="2020-01-27", market="코스피",
                 detail="12월5일 240선 돌파한 이후 240선을 다시 지지할 때 사려고")
-insertStockData(name="KG모빌리언스", goalPrice=6450, sellPrice=6300, buyPrice=59000, lossPrice=5650,
+insertStockData(name="KG모빌리언스", goalPrice=6450, sellPrice=6300, buyPrice=5900, lossPrice=5650,
                 tradeStrategy="예쁜차트", date="2020-01-27", market="코스닥",
                 detail="수급이 안좋고 240선이 하락중이긴 하지만, 차트가 워낙 예쁨. 6050으로 점점 수렴하는 모습")
 saveData()
