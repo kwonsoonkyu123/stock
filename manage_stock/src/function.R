@@ -40,7 +40,7 @@ insertTradeData <- function(data=tradeData, name, date,
                       list(date=as.Date(date), name=name, price=price, quantity=quantity, totalPrice=price*quantity,
                            tradeType=tradeType, tradeStrategy=tradeStrategy, market=market,
                            account=account))
-  updateBalancedData(name, tradeStrategy, price*quality, quantity, price, market)
+  updateBalancedData(name, tradeStrategy, quantity, price)
 }
 
 insertStockData <- function(data=stockData, name, goalPrice=0, sellPrice, buyPrice, lossPrice, tradeStrategy,
